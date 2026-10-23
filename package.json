@@ -1,0 +1,64 @@
+{
+  "name": "@satanfire/dsh-ui-style",
+  "version": "1.0.0",
+  "description": "Dracula-style theme for the DSH Web conversation, plus a composer balance/quota pill for DeepSeek account and OpenCode Go subscriptions.",
+  "type": "module",
+  "license": "MIT",
+  "author": "satanfire",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/satanfire/dsh-ui-style.git"
+  },
+  "homepage": "https://github.com/satanfire/dsh-ui-style#readme",
+  "bugs": {
+    "url": "https://github.com/satanfire/dsh-ui-style/issues"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "cordis",
+    "plugin",
+    "theme",
+    "dracula",
+    "balance",
+    "quota"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "check": "node --check index.js && node --check client.js"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.0-rc.2"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}
