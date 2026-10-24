@@ -142,7 +142,9 @@ window.__ModuleLoader__.load({
         'cost.updated': '更新于 {time}',
         'cost.open': '查看费用明细',
         'cost.used': '已用 {percent}%',
-        'cost.resets': '重置于 {time}',
+        'cost.percent': '{percent}%',
+        'cost.col.used': '已用',
+        'cost.col.resets': '下次重置',
         'cost.window.rolling': '5 小时窗口',
         'cost.window.weekly': '本周',
         'cost.window.monthly': '本月',
@@ -161,7 +163,9 @@ window.__ModuleLoader__.load({
         'cost.updated': 'Updated {time}',
         'cost.open': 'Open cost details',
         'cost.used': '{percent}% used',
-        'cost.resets': 'resets {time}',
+        'cost.percent': '{percent}%',
+        'cost.col.used': 'Used',
+        'cost.col.resets': 'Next reset',
         'cost.window.rolling': '5-hour window',
         'cost.window.weekly': 'This week',
         'cost.window.monthly': 'This month',
@@ -255,7 +259,10 @@ window.__ModuleLoader__.load({
       if (Number.isNaN(date.getTime())) return null;
       const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
       if (window === 'rolling') return time;
-      return `${date.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })} ${time}`;
+      /* Zero-padded date, so the column stays one shape across months. */
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${month}/${day} ${time}`;
     }
 
     /** Wallet glyph drawn for both the pill and the DeepSeek panel rows. */
@@ -382,11 +389,11 @@ window.__ModuleLoader__.load({
           const entry = usage[window];
           if (entry === undefined || typeof entry.percent !== 'number') continue;
           if (window === 'monthly') monthly = entry;
-          const resets = resetText(entry.resetsAt, window);
-          const value = resets === null
-            ? tr('cost.used', { percent: Math.round(entry.percent) })
-            : `${tr('cost.used', { percent: Math.round(entry.percent) })} · ${tr('cost.resets', { time: resets })}`;
-          rows.push([tr(`cost.window.${window}`), value]);
+          rows.push([
+            tr(`cost.window.${window}`),
+            tr('cost.percent', { percent: Math.round(entry.percent) }),
+            resetText(entry.resetsAt, window),
+          ]);
         }
         if (rows.length === 0) {
           return { phase: 'failed', reason: 'empty-usage', link, updatedAt: now() };
@@ -408,7 +415,37 @@ window.__ModuleLoader__.load({
     function CostPanel({ state, tr, provider, model, onRefresh }) {
       const rows = Array.isArray(state.rows) ? state.rows : [];
       const updated = state.updatedAt ? new Date(state.updatedAt).toLocaleTimeString() : null;
-      const rowStyle = { display: 'flex', justifyContent: 'space-between', gap: '16px' };
+      /* Rows that carry a reset instant get a two-column table: the header
+         labels the numbers once, so each row stays one line of data. */
+      const columns = rows.some((row) => Array.isArray(row) && row.length > 2);
+      const gridStyle = {
+        display: 'grid',
+        gridTemplateColumns: columns ? 'auto 1fr auto' : 'auto 1fr',
+        columnGap: '14px',
+        rowGap: '4px',
+        alignItems: 'baseline',
+        marginBottom: '8px',
+      };
+      const valueStyle = { textAlign: 'right' };
+      const noteStyle = { ...PANEL_LABEL_STYLE, textAlign: 'right' };
+      const headStyle = { ...PANEL_LABEL_STYLE, textAlign: 'right', fontSize: '11px' };
+      const header = columns
+        ? [
+            React.createElement('span', { key: 'head-label' }),
+            React.createElement('span', { key: 'head-used', style: headStyle }, tr('cost.col.used')),
+            React.createElement('span', { key: 'head-reset', style: headStyle }, tr('cost.col.resets')),
+          ]
+        : [];
+      const body = rows.flatMap(([label, value, note], index) => {
+        const cells = [
+          React.createElement('span', { key: `label-${index}`, style: PANEL_LABEL_STYLE }, label),
+          React.createElement('span', { key: `value-${index}`, style: valueStyle }, value),
+        ];
+        if (columns) {
+          cells.push(React.createElement('span', { key: `note-${index}`, style: noteStyle }, note ?? ''));
+        }
+        return cells;
+      });
       const status =
         state.phase === 'loading'
           ? tr('cost.loading')
@@ -446,15 +483,9 @@ window.__ModuleLoader__.load({
         rows.length > 0
           ? React.createElement(
               'div',
-              { style: { display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' } },
-              rows.map(([label, value], index) =>
-                React.createElement(
-                  'div',
-                  { style: rowStyle, key: `${label}-${index}` },
-                  React.createElement('span', { style: PANEL_LABEL_STYLE }, label),
-                  React.createElement('span', null, value),
-                ),
-              ),
+              { style: gridStyle, 'data-ui-style-cost-rows': true },
+              header,
+              body,
             )
           : null,
         status !== null
