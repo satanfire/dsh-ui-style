@@ -143,9 +143,10 @@ window.__ModuleLoader__.load({
         'cost.open': '查看费用明细',
         'cost.used': '已用 {percent}%',
         'cost.percent': '{percent}%',
+        'cost.col.window': '周期',
         'cost.col.used': '已用',
-        'cost.col.resets': '下次重置',
-        'cost.window.rolling': '5 小时窗口',
+        'cost.col.resets': '下次重置时间',
+        'cost.window.rolling': '5 小时',
         'cost.window.weekly': '本周',
         'cost.window.monthly': '本月',
         'cost.plan.go': 'Go 订阅',
@@ -164,9 +165,10 @@ window.__ModuleLoader__.load({
         'cost.open': 'Open cost details',
         'cost.used': '{percent}% used',
         'cost.percent': '{percent}%',
+        'cost.col.window': 'Window',
         'cost.col.used': 'Used',
-        'cost.col.resets': 'Next reset',
-        'cost.window.rolling': '5-hour window',
+        'cost.col.resets': 'Next reset time',
+        'cost.window.rolling': '5-hour',
         'cost.window.weekly': 'This week',
         'cost.window.monthly': 'This month',
         'cost.plan.go': 'Go plan',
@@ -232,6 +234,8 @@ window.__ModuleLoader__.load({
       fontVariantNumeric: 'tabular-nums',
     };
     const PANEL_LABEL_STYLE = { color: 'var(--dsw-alias-label-tertiary, #8a8f98)' };
+    /* One hairline weight for every panel rule, so header and footer match. */
+    const HAIRLINE = '0.5px solid var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.3))';
 
     /** Group the integer digits of a fixed two-decimal amount. */
     function groupAmount(text) {
@@ -412,26 +416,33 @@ window.__ModuleLoader__.load({
     }
 
     /** Provider cost detail opened by the dock pill. */
-    function CostPanel({ state, tr, provider, model, onRefresh }) {
+    function CostPanel({ state, tr, provider, onRefresh }) {
       const rows = Array.isArray(state.rows) ? state.rows : [];
       const updated = state.updatedAt ? new Date(state.updatedAt).toLocaleTimeString() : null;
-      /* Rows that carry a reset instant get a two-column table: the header
+      /* Rows that carry a reset instant get a three-column table: the header
          labels the numbers once, so each row stays one line of data. */
       const columns = rows.some((row) => Array.isArray(row) && row.length > 2);
       const gridStyle = {
         display: 'grid',
-        gridTemplateColumns: columns ? 'auto 1fr auto' : 'auto 1fr',
-        columnGap: '14px',
+        /* Percent sits right after the window label; the reset column takes
+           the remaining width and stays right-aligned. */
+        gridTemplateColumns: columns ? 'auto auto 1fr' : 'auto 1fr',
+        columnGap: '12px',
         rowGap: '4px',
         alignItems: 'baseline',
         marginBottom: '8px',
       };
       const valueStyle = { textAlign: 'right' };
       const noteStyle = { ...PANEL_LABEL_STYLE, textAlign: 'right' };
-      const headStyle = { ...PANEL_LABEL_STYLE, textAlign: 'right', fontSize: '11px' };
+      const headBase = {
+        color: 'var(--dsw-alias-label-primary)',
+        fontWeight: 600,
+        fontSize: '11px',
+      };
+      const headStyle = { ...headBase, textAlign: 'right' };
       const header = columns
         ? [
-            React.createElement('span', { key: 'head-label' }),
+            React.createElement('span', { key: 'head-window', style: headBase }, tr('cost.col.window')),
             React.createElement('span', { key: 'head-used', style: headStyle }, tr('cost.col.used')),
             React.createElement('span', { key: 'head-reset', style: headStyle }, tr('cost.col.resets')),
           ]
@@ -468,7 +479,6 @@ window.__ModuleLoader__.load({
               alignItems: 'baseline',
               justifyContent: 'space-between',
               gap: '12px',
-              marginBottom: '6px',
             },
           },
           React.createElement('span', { style: { fontWeight: 600 } }, tr('cost.title')),
@@ -476,10 +486,14 @@ window.__ModuleLoader__.load({
             ? React.createElement(
                 'span',
                 { style: { ...PANEL_LABEL_STYLE, fontSize: '11px' } },
-                model ? `${provider} / ${model}` : provider,
+                provider,
               )
             : null,
         ),
+        React.createElement('div', {
+          style: { borderTop: HAIRLINE, margin: '6px 0' },
+          'data-ui-style-cost-rule': true,
+        }),
         rows.length > 0
           ? React.createElement(
               'div',
@@ -506,7 +520,7 @@ window.__ModuleLoader__.load({
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '12px',
-              borderTop: '0.5px solid var(--dsw-alias-border-l1, rgba(128, 128, 128, 0.3))',
+              borderTop: HAIRLINE,
               paddingTop: '6px',
             },
           },
@@ -551,7 +565,6 @@ window.__ModuleLoader__.load({
       const selection = useProjection('modelSelection');
       const pick = selection ? (selection.next ?? selection.lastUsed) : null;
       const provider = pick ? pick.provider : null;
-      const model = pick ? pick.model : null;
       const supported =
         provider !== null && Object.prototype.hasOwnProperty.call(PROVIDER_COST_READERS, provider);
       const tr = typeof t === 'function' ? t : (key) => COST_DICTS.zh[key] ?? key;
@@ -652,7 +665,7 @@ window.__ModuleLoader__.load({
           ),
         ),
         open
-          ? React.createElement(CostPanel, { state, tr, provider, model, onRefresh: read })
+          ? React.createElement(CostPanel, { state, tr, provider, onRefresh: read })
           : null,
       );
     }
