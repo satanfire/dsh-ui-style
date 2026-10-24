@@ -83,6 +83,16 @@ window.__ModuleLoader__.load({
         color: var(--dsh-ui-green, #50fa7b) !important;
       }
 
+      /* This theme forces a monospace face, so list markers are wider than the
+         shipped 18px indent and spill out of the transcript column. Widen the
+         indent enough for two digits; markers then stay inside the column. */
+      [data-conversation-scroll] :is(ol, ul) {
+        padding-inline-start: 2.2em;
+      }
+      [data-conversation-scroll] :is(ol, ul) :is(ol, ul) {
+        padding-inline-start: 1.8em;
+      }
+
       /* Tool/process rows: flat and dimmed, like background job lines. */
       [data-conversation-scroll] :is([data-chat-flow-kind="tool-call"], [data-chat-flow-kind="turn-process"]) {
         --dsw-alias-bg-layer-1: transparent;

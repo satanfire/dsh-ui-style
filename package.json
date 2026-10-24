@@ -1,6 +1,6 @@
 {
   "name": "@satanfire/dsh-ui-style",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Dracula-style theme for the DSH Web conversation, plus a composer balance/quota pill for DeepSeek account and OpenCode Go subscriptions.",
   "type": "module",
   "license": "MIT",
