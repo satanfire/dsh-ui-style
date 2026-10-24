@@ -432,6 +432,8 @@ window.__ModuleLoader__.load({
         alignItems: 'baseline',
         marginBottom: '8px',
       };
+      /* Row labels are the emphasized column; the percent stays regular weight. */
+      const labelStyle = { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 };
       const valueStyle = { textAlign: 'right' };
       const noteStyle = { ...PANEL_LABEL_STYLE, textAlign: 'right' };
       const headBase = {
@@ -449,7 +451,7 @@ window.__ModuleLoader__.load({
         : [];
       const body = rows.flatMap(([label, value, note], index) => {
         const cells = [
-          React.createElement('span', { key: `label-${index}`, style: PANEL_LABEL_STYLE }, label),
+          React.createElement('span', { key: `label-${index}`, style: labelStyle }, label),
           React.createElement('span', { key: `value-${index}`, style: valueStyle }, value),
         ];
         if (columns) {
